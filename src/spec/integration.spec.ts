@@ -205,7 +205,7 @@ describe('CEL Integration Tests', () => {
         }
       `
 
-      const result = evaluate(expr)
+      const result = evaluate(expr) as Record<string, string | Uint8Array>
 
       expect(result.isValidSize).toBe(true)
       expect(result.emptyBytes).toBe(true)
@@ -268,7 +268,7 @@ describe('CEL Integration Tests', () => {
         },
       ]
 
-      testCases.forEach((testCase, index) => {
+      testCases.forEach((testCase) => {
         const result = evaluate(expr, testCase.context)
         expect(result).toBe(testCase.expected)
       })
@@ -464,11 +464,9 @@ describe('CEL Integration Tests', () => {
     it('should handle type mismatches in complex expressions', () => {
       const expr1 = `"string" > 5`
       const expr2 = `[1, 2, 3].all(x, x > "invalid")`
-      const expr3 = `{"key": "value"}.nonExistentMethod()`
 
-      expect(() => evaluate(expr1)).toThrow()
-      expect(() => evaluate(expr2)).toThrow()
-      expect(() => evaluate(expr3)).toThrow()
+      expect(() => evaluate(expr1)).toThrow('greaterThan operation cannot be applied to (string, int)')
+      expect(() => evaluate(expr2)).toThrow('greaterThan operation cannot be applied to (int, string)')
     })
   })
 

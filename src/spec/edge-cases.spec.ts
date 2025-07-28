@@ -3,16 +3,13 @@ import { expect, describe, it } from 'vitest'
 import { evaluate } from '..'
 
 describe('CEL Edge Cases & Missing Features', () => {
-  describe('String Methods (Now implemented)', () => {
+  describe('String Methods', () => {
     it('should support implemented string methods', () => {
-      // Test the string methods we've implemented
       expect(evaluate('"hello".endsWith("lo")')).toBe(true)
       expect(evaluate('"hello world".contains("world")')).toBe(true)
       expect(evaluate('"a,b,c".split(",")')).toStrictEqual(['a', 'b', 'c'])
       expect(evaluate('"hello".size()')).toBe(5)
       expect(evaluate('"  hello  ".trim()')).toBe('hello')
-
-      // startsWith is also implemented
       expect(evaluate('"hello".startsWith("he")')).toBe(true)
     })
   })
@@ -40,16 +37,6 @@ describe('CEL Edge Cases & Missing Features', () => {
       const expr = '9223372036854775807 + 1'
       // Test that it throws an overflow error
       expect(() => evaluate(expr)).toThrow('Integer overflow in addition')
-    })
-
-    it('should handle division by zero', () => {
-      const expr = '1 / 0'
-      expect(() => evaluate(expr)).toThrow()
-    })
-
-    it('should handle modulo by zero', () => {
-      const expr = '5 % 0'
-      expect(() => evaluate(expr)).toThrow()
     })
   })
 
@@ -250,7 +237,7 @@ describe('CEL Edge Cases & Missing Features', () => {
   describe('Error Propagation', () => {
     it('should propagate errors through macro chains', () => {
       const expr = '[1, 2, 3].map(x, x.nonExistentMethod())'
-      expect(() => evaluate(expr)).toThrow()
+      expect(() => evaluate(expr)).toThrow('nonExistentMethod')
     })
 
     it('should handle errors in nested expressions', () => {

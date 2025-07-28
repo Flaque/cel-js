@@ -63,7 +63,9 @@ import { evaluate, parse } from '../dist/index.js'
 
   // Collection macros - filter()
   const filterMacroExpr = 'numbers.filter(n, n > 3)'
-  console.log(`${filterMacroExpr} => ${evaluate(filterMacroExpr, collectionContext)}`) // => [4, 5]
+  console.log(
+    `${filterMacroExpr} => ${evaluate(filterMacroExpr, collectionContext)}`,
+  ) // => [4, 5]
 
   // Collection macros - map()
   const mapMacroExpr = 'numbers.map(n, n * 2)'
@@ -75,23 +77,33 @@ import { evaluate, parse } from '../dist/index.js'
 
   // Collection macros - exists()
   const existsMacroExpr = 'numbers.exists(n, n > 5)'
-  console.log(`${existsMacroExpr} => ${evaluate(existsMacroExpr, collectionContext)}`) // => false
+  console.log(
+    `${existsMacroExpr} => ${evaluate(existsMacroExpr, collectionContext)}`,
+  ) // => false
 
   // Collection macros - exists_one()
   const existsOneMacroExpr = 'numbers.exists_one(n, n == 5)'
-  console.log(`${existsOneMacroExpr} => ${evaluate(existsOneMacroExpr, collectionContext)}`) // => true
+  console.log(
+    `${existsOneMacroExpr} => ${evaluate(existsOneMacroExpr, collectionContext)}`,
+  ) // => true
 
   // Collection macros on maps
   const mapFilterExpr = 'scores.filter(name, scores[name] > 80)'
-  console.log(`${mapFilterExpr} => ${evaluate(mapFilterExpr, collectionContext)}`) // => ['alice', 'bob']
+  console.log(
+    `${mapFilterExpr} => ${evaluate(mapFilterExpr, collectionContext)}`,
+  ) // => ['alice', 'bob']
 
   // Collection macros - map with predicate (3 arguments)
   const mapWithPredicateExpr = 'numbers.map(n, n > 3, n * 10)'
-  console.log(`${mapWithPredicateExpr} => ${evaluate(mapWithPredicateExpr, collectionContext)}`) // => [40, 50]
+  console.log(
+    `${mapWithPredicateExpr} => ${evaluate(mapWithPredicateExpr, collectionContext)}`,
+  ) // => [40, 50]
 
   // Collection macros - extract properties
   const extractPropsExpr = 'people.map(person, person.name)'
-  console.log(`${extractPropsExpr} => ${evaluate(extractPropsExpr, collectionContext)}`) // => ['Alice', 'Bob', 'Charlie']
+  console.log(
+    `${extractPropsExpr} => ${evaluate(extractPropsExpr, collectionContext)}`,
+  ) // => ['Alice', 'Bob', 'Charlie']
 
   // Math functions
   console.log(`abs(-5) => ${evaluate('abs(-5)')}`) // => 5
@@ -101,41 +113,72 @@ import { evaluate, parse } from '../dist/index.js'
   console.log(`ceil(3.2) => ${evaluate('ceil(3.2)')}`) // => 4
 
   // String methods
-  console.log(`"hello world".contains("world") => ${evaluate('"hello world".contains("world")')}`) // => true
-  console.log(`"filename.txt".endsWith(".txt") => ${evaluate('"filename.txt".endsWith(".txt")')}`) // => true
+  console.log(
+    `"hello world".contains("world") => ${evaluate('"hello world".contains("world")')}`,
+  ) // => true
+  console.log(
+    `"filename.txt".endsWith(".txt") => ${evaluate('"filename.txt".endsWith(".txt")')}`,
+  ) // => true
   console.log(`"  hello  ".trim() => "${evaluate('"  hello  ".trim()')}"`) // => "hello"
-  console.log(`"a,b,c".split(",") => ${JSON.stringify(evaluate('"a,b,c".split(",")'))}`); // => ["a","b","c"]
+  console.log(
+    `"a,b,c".split(",") => ${JSON.stringify(evaluate('"a,b,c".split(",")'))}`,
+  ) // => ["a","b","c"]
 
   // String method chaining
-  console.log(`"  hello,world  ".trim().split(",") => ${JSON.stringify(evaluate('"  hello,world  ".trim().split(",")'))}`); // => ["hello","world"]
+  console.log(
+    `"  hello,world  ".trim().split(",") => ${JSON.stringify(evaluate('"  hello,world  ".trim().split(",")'))}`,
+  ) // => ["hello","world"]
 
   // Timestamp and duration
-  console.log(`timestamp("2023-01-01T00:00:00Z") => ${evaluate('timestamp("2023-01-01T00:00:00Z")').toISOString()}`) // => 2023-01-01T00:00:00.000Z
-  console.log(`duration("1h30m") => ${JSON.stringify(evaluate('duration("1h30m")'))}`); // => {"seconds":5400,"nanoseconds":0}
-  console.log(`timestamp("2023-01-01T00:00:00Z") + duration("1h") => ${evaluate('timestamp("2023-01-01T00:00:00Z") + duration("1h")').toISOString()}`) // => 2023-01-01T01:00:00.000Z
+  console.log(
+    `timestamp("2023-01-01T00:00:00Z") => ${(evaluate('timestamp("2023-01-01T00:00:00Z")') as Date).toISOString()}`,
+  ) // => 2023-01-01T00:00:00.000Z
+  console.log(
+    `duration("1h30m") => ${JSON.stringify(evaluate('duration("1h30m")'))}`,
+  ) // => {"seconds":5400,"nanoseconds":0}
+  console.log(
+    `timestamp("2023-01-01T00:00:00Z") + duration("1h") => ${(evaluate('timestamp("2023-01-01T00:00:00Z") + duration("1h")') as Date).toISOString()}`,
+  ) // => 2023-01-01T01:00:00.000Z
 
   // List operations
   // filter
-  console.log(`[1, 2, 3, 4, 5].filter(v, v > 3) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].filter(v, v > 3)'))}`); // => [4,5]
-  
+  console.log(
+    `[1, 2, 3, 4, 5].filter(v, v > 3) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].filter(v, v > 3)'))}`,
+  ) // => [4,5]
+
   // map (transform)
-  console.log(`[1, 2, 3].map(v, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3].map(v, v * 2)'))}`); // => [2,4,6]
-  
+  console.log(
+    `[1, 2, 3].map(v, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3].map(v, v * 2)'))}`,
+  ) // => [2,4,6]
+
   // map (filter and transform)
-  console.log(`[1, 2, 3, 4, 5].map(v, v > 3, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].map(v, v > 3, v * 2)'))}`); // => [8,10]
+  console.log(
+    `[1, 2, 3, 4, 5].map(v, v > 3, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].map(v, v > 3, v * 2)'))}`,
+  ) // => [8,10]
 
   // List macros
-  console.log(`[1, 2, 3].all(v, v > 0) => ${evaluate('[1, 2, 3].all(v, v > 0)')}`); // => true
-  console.log(`[1, 2, 3].exists(v, v > 2) => ${evaluate('[1, 2, 3].exists(v, v > 2)')}`); // => true
-  console.log(`[1, 2, 3].exists_one(v, v > 2) => ${evaluate('[1, 2, 3].exists_one(v, v > 2)')}`); // => true
+  console.log(
+    `[1, 2, 3].all(v, v > 0) => ${evaluate('[1, 2, 3].all(v, v > 0)')}`,
+  ) // => true
+  console.log(
+    `[1, 2, 3].exists(v, v > 2) => ${evaluate('[1, 2, 3].exists(v, v > 2)')}`,
+  ) // => true
+  console.log(
+    `[1, 2, 3].exists_one(v, v > 2) => ${evaluate('[1, 2, 3].exists_one(v, v > 2)')}`,
+  ) // => true
 
   // Map operations
-  console.log(`{"a": 1, "b": 2, "c": 3}.filter(v, v > 1) => ${JSON.stringify(evaluate('{"a": 1, "b": 2, "c": 3}.filter(v, v > 1)'))}`); // => {"b":2,"c":3}
-  console.log(`{"a": 1, "b": 2}.map(v, v * 10) => ${JSON.stringify(evaluate('{"a": 1, "b": 2}.map(v, v * 10)'))}`); // => {"a":10,"b":20}
+  console.log(
+    `{"a": 1, "b": 2, "c": 3}.filter(v, v > 1) => ${JSON.stringify(evaluate('{"a": 1, "b": 2, "c": 3}.filter(v, v > 1)'))}`,
+  ) // => {"b":2,"c":3}
+  console.log(
+    `{"a": 1, "b": 2}.map(v, v * 10) => ${JSON.stringify(evaluate('{"a": 1, "b": 2}.map(v, v * 10)'))}`,
+  ) // => {"a":10,"b":20}
 
   // Complex chained expressions
-  const chainedExpr = '["  hello  ", "  world  "].map(s, s.trim()).filter(s, s.contains("o"))'
-  console.log(`${chainedExpr} => ${JSON.stringify(evaluate(chainedExpr))}`); // => ["hello","world"]
+  const chainedExpr =
+    '["  hello  ", "  world  "].map(s, s.trim()).filter(s, s.contains("o"))'
+  console.log(`${chainedExpr} => ${JSON.stringify(evaluate(chainedExpr))}`) // => ["hello","world"]
 
   // Math extension functions
   console.log(`math.greatest(3, 7, 2) => ${evaluate('math.greatest(3, 7, 2)')}`) // => 7
@@ -145,18 +188,30 @@ import { evaluate, parse } from '../dist/index.js'
   console.log(`math.isFinite(42.0) => ${evaluate('math.isFinite(42.0)')}`) // => true
 
   // String extension functions
-  console.log(`strings.quote('hello "world"') => ${evaluate("strings.quote('hello \"world\"')")}`) // => "hello \"world\""
+  console.log(
+    `strings.quote('hello "world"') => ${evaluate('strings.quote(\'hello "world"\')')}`,
+  ) // => "hello \"world\""
 
   // Base64 encoding/decoding
-  console.log(`base64.encode(b'hello') => ${evaluate("base64.encode(b'hello')")}`) // => "aGVsbG8="
-  console.log(`base64.decode('aGVsbG8=') => ${JSON.stringify(evaluate("base64.decode('aGVsbG8=')"))}`) // => [104,101,108,108,111]
+  console.log(
+    `base64.encode(b'hello') => ${evaluate("base64.encode(b'hello')")}`,
+  ) // => "aGVsbG8="
+  console.log(
+    `base64.decode('aGVsbG8=') => ${JSON.stringify(evaluate("base64.decode('aGVsbG8=')"))}`,
+  ) // => [104,101,108,108,111]
 
   // Optional types
-  console.log(`optional.of(42) => ${JSON.stringify(evaluate('optional.of(42)'))}`) // => {"hasValue":true,"value":42}
-  console.log(`optional.none() => ${JSON.stringify(evaluate('optional.none()'))}`) // => {"hasValue":false}
+  console.log(
+    `optional.of(42) => ${JSON.stringify(evaluate('optional.of(42)'))}`,
+  ) // => {"hasValue":true,"value":42}
+  console.log(
+    `optional.none() => ${JSON.stringify(evaluate('optional.none()'))}`,
+  ) // => {"hasValue":false}
 
   // Dynamic type comparisons
-  console.log(`dyn('hello') == dyn('hello') => ${evaluate("dyn('hello') == dyn('hello')")}`) // => true
+  console.log(
+    `dyn('hello') == dyn('hello') => ${evaluate("dyn('hello') == dyn('hello')")}`,
+  ) // => true
 
   // Math functions
   console.log(`abs(-5) => ${evaluate('abs(-5)')}`) // => 5
@@ -166,41 +221,72 @@ import { evaluate, parse } from '../dist/index.js'
   console.log(`ceil(3.2) => ${evaluate('ceil(3.2)')}`) // => 4
 
   // String methods
-  console.log(`"hello world".contains("world") => ${evaluate('"hello world".contains("world")')}`) // => true
-  console.log(`"filename.txt".endsWith(".txt") => ${evaluate('"filename.txt".endsWith(".txt")')}`) // => true
+  console.log(
+    `"hello world".contains("world") => ${evaluate('"hello world".contains("world")')}`,
+  ) // => true
+  console.log(
+    `"filename.txt".endsWith(".txt") => ${evaluate('"filename.txt".endsWith(".txt")')}`,
+  ) // => true
   console.log(`"  hello  ".trim() => "${evaluate('"  hello  ".trim()')}"`) // => "hello"
-  console.log(`"a,b,c".split(",") => ${JSON.stringify(evaluate('"a,b,c".split(",")'))}`); // => ["a","b","c"]
+  console.log(
+    `"a,b,c".split(",") => ${JSON.stringify(evaluate('"a,b,c".split(",")'))}`,
+  ) // => ["a","b","c"]
 
   // String method chaining
-  console.log(`"  hello,world  ".trim().split(",") => ${JSON.stringify(evaluate('"  hello,world  ".trim().split(",")'))}`); // => ["hello","world"]
+  console.log(
+    `"  hello,world  ".trim().split(",") => ${JSON.stringify(evaluate('"  hello,world  ".trim().split(",")'))}`,
+  ) // => ["hello","world"]
 
   // Timestamp and duration
-  console.log(`timestamp("2023-01-01T00:00:00Z") => ${evaluate('timestamp("2023-01-01T00:00:00Z")').toISOString()}`) // => 2023-01-01T00:00:00.000Z
-  console.log(`duration("1h30m") => ${JSON.stringify(evaluate('duration("1h30m")'))}`); // => {"seconds":5400,"nanoseconds":0}
-  console.log(`timestamp("2023-01-01T00:00:00Z") + duration("1h") => ${evaluate('timestamp("2023-01-01T00:00:00Z") + duration("1h")').toISOString()}`) // => 2023-01-01T01:00:00.000Z
+  console.log(
+    `timestamp("2023-01-01T00:00:00Z") => ${(evaluate('timestamp("2023-01-01T00:00:00Z")') as Date).toISOString()}`,
+  ) // => 2023-01-01T00:00:00.000Z
+  console.log(
+    `duration("1h30m") => ${JSON.stringify(evaluate('duration("1h30m")'))}`,
+  ) // => {"seconds":5400,"nanoseconds":0}
+  console.log(
+    `timestamp("2023-01-01T00:00:00Z") + duration("1h") => ${(evaluate('timestamp("2023-01-01T00:00:00Z") + duration("1h")') as Date).toISOString()}`,
+  ) // => 2023-01-01T01:00:00.000Z
 
   // List operations
   // filter
-  console.log(`[1, 2, 3, 4, 5].filter(v, v > 3) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].filter(v, v > 3)'))}`); // => [4,5]
-  
+  console.log(
+    `[1, 2, 3, 4, 5].filter(v, v > 3) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].filter(v, v > 3)'))}`,
+  ) // => [4,5]
+
   // map (transform)
-  console.log(`[1, 2, 3].map(v, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3].map(v, v * 2)'))}`); // => [2,4,6]
-  
+  console.log(
+    `[1, 2, 3].map(v, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3].map(v, v * 2)'))}`,
+  ) // => [2,4,6]
+
   // map (filter and transform)
-  console.log(`[1, 2, 3, 4, 5].map(v, v > 3, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].map(v, v > 3, v * 2)'))}`); // => [8,10]
+  console.log(
+    `[1, 2, 3, 4, 5].map(v, v > 3, v * 2) => ${JSON.stringify(evaluate('[1, 2, 3, 4, 5].map(v, v > 3, v * 2)'))}`,
+  ) // => [8,10]
 
   // List macros
-  console.log(`[1, 2, 3].all(v, v > 0) => ${evaluate('[1, 2, 3].all(v, v > 0)')}`); // => true
-  console.log(`[1, 2, 3].exists(v, v > 2) => ${evaluate('[1, 2, 3].exists(v, v > 2)')}`); // => true
-  console.log(`[1, 2, 3].exists_one(v, v > 2) => ${evaluate('[1, 2, 3].exists_one(v, v > 2)')}`); // => true
+  console.log(
+    `[1, 2, 3].all(v, v > 0) => ${evaluate('[1, 2, 3].all(v, v > 0)')}`,
+  ) // => true
+  console.log(
+    `[1, 2, 3].exists(v, v > 2) => ${evaluate('[1, 2, 3].exists(v, v > 2)')}`,
+  ) // => true
+  console.log(
+    `[1, 2, 3].exists_one(v, v > 2) => ${evaluate('[1, 2, 3].exists_one(v, v > 2)')}`,
+  ) // => true
 
   // Map operations
-  console.log(`{"a": 1, "b": 2, "c": 3}.filter(v, v > 1) => ${JSON.stringify(evaluate('{"a": 1, "b": 2, "c": 3}.filter(v, v > 1)'))}`); // => {"b":2,"c":3}
-  console.log(`{"a": 1, "b": 2}.map(v, v * 10) => ${JSON.stringify(evaluate('{"a": 1, "b": 2}.map(v, v * 10)'))}`); // => {"a":10,"b":20}
+  console.log(
+    `{"a": 1, "b": 2, "c": 3}.filter(v, v > 1) => ${JSON.stringify(evaluate('{"a": 1, "b": 2, "c": 3}.filter(v, v > 1)'))}`,
+  ) // => {"b":2,"c":3}
+  console.log(
+    `{"a": 1, "b": 2}.map(v, v * 10) => ${JSON.stringify(evaluate('{"a": 1, "b": 2}.map(v, v * 10)'))}`,
+  ) // => {"a":10,"b":20}
 
   // Complex chained expressions
-  const chainedExpr = '["  hello  ", "  world  "].map(s, s.trim()).filter(s, s.contains("o"))'
-  console.log(`${chainedExpr} => ${JSON.stringify(evaluate(chainedExpr))}`); // => ["hello","world"]
+  const chainedExpr2 =
+    '["  hello  ", "  world  "].map(s, s.trim()).filter(s, s.contains("o"))'
+  console.log(`${chainedExpr2} => ${JSON.stringify(evaluate(chainedExpr2))}`) // => ["hello","world"]
 
   // Math extension functions
   console.log(`math.greatest(3, 7, 2) => ${evaluate('math.greatest(3, 7, 2)')}`) // => 7
@@ -210,18 +296,30 @@ import { evaluate, parse } from '../dist/index.js'
   console.log(`math.isFinite(42.0) => ${evaluate('math.isFinite(42.0)')}`) // => true
 
   // String extension functions
-  console.log(`strings.quote('hello "world"') => ${evaluate("strings.quote('hello \"world\"')")}`) // => "hello \"world\""
+  console.log(
+    `strings.quote('hello "world"') => ${evaluate('strings.quote(\'hello "world"\')')}`,
+  ) // => "hello \"world\""
 
   // Base64 encoding/decoding
-  console.log(`base64.encode(b'hello') => ${evaluate("base64.encode(b'hello')")}`) // => "aGVsbG8="
-  console.log(`base64.decode('aGVsbG8=') => ${JSON.stringify(evaluate("base64.decode('aGVsbG8=')"))}`) // => [104,101,108,108,111]
+  console.log(
+    `base64.encode(b'hello') => ${evaluate("base64.encode(b'hello')")}`,
+  ) // => "aGVsbG8="
+  console.log(
+    `base64.decode('aGVsbG8=') => ${JSON.stringify(evaluate("base64.decode('aGVsbG8=')"))}`,
+  ) // => [104,101,108,108,111]
 
   // Optional types
-  console.log(`optional.of(42) => ${JSON.stringify(evaluate('optional.of(42)'))}`) // => {"hasValue":true,"value":42}
-  console.log(`optional.none() => ${JSON.stringify(evaluate('optional.none()'))}`) // => {"hasValue":false}
+  console.log(
+    `optional.of(42) => ${JSON.stringify(evaluate('optional.of(42)'))}`,
+  ) // => {"hasValue":true,"value":42}
+  console.log(
+    `optional.none() => ${JSON.stringify(evaluate('optional.none()'))}`,
+  ) // => {"hasValue":false}
 
   // Dynamic type comparisons
-  console.log(`dyn('hello') == dyn('hello') => ${evaluate("dyn('hello') == dyn('hello')")}`) // => true
+  console.log(
+    `dyn('hello') == dyn('hello') => ${evaluate("dyn('hello') == dyn('hello')")}`,
+  ) // => true
 
   // Custom function expressions
   const functionExpr = 'max(2, 1, 3, 7)'

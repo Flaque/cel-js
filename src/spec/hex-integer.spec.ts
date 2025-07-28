@@ -21,7 +21,7 @@ describe('hexadecimal integers', () => {
   it('should evaluate hex unsigned integers with uppercase suffix', () => {
     const result = evaluate('0xAU')
     expect(Number(result)).toBe(10)
-    expect(result.valueOf()).toBe(10)
+    expect(result?.valueOf()).toBe(10)
   })
 
   it('should handle hex unsigned integers in arithmetic operations', () => {
