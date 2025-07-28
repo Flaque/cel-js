@@ -65,7 +65,19 @@ enum Mode {
   'normal',
   /** The visitor is executed inside a has macro */
   'has',
+  /** The visitor is extracting a variable name */
+  'extract_variable',
 }
+
+/** Collection macros that operate on lists and maps */
+const COLLECTION_MACROS = [
+  'all',
+  'exists',
+  'exists_one',
+  'filter',
+  'map',
+] as const
+type CollectionMacro = (typeof COLLECTION_MACROS)[number]
 
 const parserInstance = new CelParser()
 
@@ -191,7 +203,7 @@ export class CelVisitor
 
     // Navigate to get the identifier - this is a simplified approach
     // In a real implementation, we'd need to ensure this is specifically an identifier
-    const variableName = this.extractCollectionVariableName(variableExpr)
+    const variableName = this.extractVariableName(variableExpr)
 
     const isMap = this.isMap(collection)
     const iterationItems = isMap
@@ -201,24 +213,25 @@ export class CelVisitor
     // Handle based on macro type
     switch (macroName) {
       case 'filter':
-        return this.handleCollectionFilter(iterationItems, variableName, predicateExpr)
+        return this.handleFilter(iterationItems, variableName, predicateExpr)
       case 'map':
-        return this.handleCollectionMap(iterationItems, variableName, expressions)
+        return this.handleMap(iterationItems, variableName, expressions)
       case 'all':
-        return this.handleCollectionAll(iterationItems, variableName, predicateExpr)
+        return this.handleAll(iterationItems, variableName, predicateExpr)
       case 'exists':
-        return this.handleCollectionExists(iterationItems, variableName, predicateExpr)
+        return this.handleExists(iterationItems, variableName, predicateExpr)
       case 'exists_one':
-        return this.handleCollectionExistsOne(iterationItems, variableName, predicateExpr)
+        return this.handleExistsOne(iterationItems, variableName, predicateExpr)
       default:
         throw new CelEvaluationError(`Unknown collection macro: ${macroName}`)
     }
   }
 
   /**
-   * Extracts the variable name from a variable expression for collection macros.
+   * Extracts the variable name from a variable expression, ensuring it's a simple identifier.
+   * Reuses the existing visitor infrastructure with a special mode.
    */
-  private extractCollectionVariableName(variableExpr: unknown): string {
+  private extractVariableName(variableExpr: unknown): string {
     const expr = variableExpr as ExprCstNode
 
     // Set extraction mode and use existing visitor traversal
@@ -274,7 +287,7 @@ export class CelVisitor
   /**
    * Handles the filter collection macro.
    */
-  private handleCollectionFilter(
+  private handleFilter(
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
@@ -296,7 +309,7 @@ export class CelVisitor
   /**
    * Handles the map collection macro (with transform or filter+transform).
    */
-  private handleCollectionMap(
+  private handleMap(
     iterationItems: unknown[],
     variable: string,
     expressions: (ExprCstNode | ExprCstNode[])[],
@@ -344,7 +357,7 @@ export class CelVisitor
   /**
    * Handles the all collection macro.
    */
-  private handleCollectionAll(
+  private handleAll(
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
@@ -357,7 +370,7 @@ export class CelVisitor
   /**
    * Handles the exists collection macro.
    */
-  private handleCollectionExists(
+  private handleExists(
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
@@ -370,7 +383,7 @@ export class CelVisitor
   /**
    * Handles the exists_one collection macro.
    */
-  private handleCollectionExistsOne(
+  private handleExistsOne(
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
@@ -382,17 +395,17 @@ export class CelVisitor
   }
 
   /**
-   * Tracks the current block context for cel.block() and cel.index() operations.
-   */
-  private blockContext: any[] | null = null
-
-  /**
    * Evaluates the expression including conditional ternary expressions in the form: condition ? trueExpr : falseExpr
    *
    * @param ctx - The expression context containing the condition and optional ternary branches
    * @returns The result of evaluating the expression
    */
   public expr(ctx: ExprCstChildren): unknown {
+    // In variable extraction mode, reject ternary expressions
+    if (this.mode === Mode.extract_variable && ctx.QuestionMark) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     const condition = this.visit(ctx.conditionalOr[0])
 
     // If no ternary operator is present, just return the condition
@@ -464,6 +477,11 @@ export class CelVisitor
   }
 
   conditionalOr(ctx: ConditionalOrCstChildren): boolean {
+    // In variable extraction mode, reject OR operations
+    if (this.mode === Mode.extract_variable && ctx.rhs) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     let left: unknown
     let leftError: Error | null = null
 
@@ -472,12 +490,12 @@ export class CelVisitor
       left = this.visit(ctx.lhs)
     } catch (error) {
       leftError = error instanceof Error ? error : new Error(String(error))
-      }
+    }
 
     // Short circuit if left is true. Required for proper logical OR evaluation.
-      if (left === true) {
-        return true
-      }
+    if (left === true) {
+      return true
+    }
 
     if (ctx.rhs) {
         let result = left
@@ -547,6 +565,11 @@ export class CelVisitor
    * with logical AND operations.
    */
   conditionalAnd(ctx: ConditionalAndCstChildren): boolean {
+    // In variable extraction mode, reject AND operations
+    if (this.mode === Mode.extract_variable && ctx.rhs) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     let left: unknown
     let leftError: Error | null = null
 
@@ -618,6 +641,11 @@ export class CelVisitor
   }
 
   relation(ctx: RelationCstChildren): boolean {
+    // In variable extraction mode, reject comparison operations
+    if (this.mode === Mode.extract_variable && ctx.rhs) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     const left = this.visit(ctx.lhs)
 
     if (ctx.rhs) {
@@ -632,6 +660,11 @@ export class CelVisitor
   }
 
   addition(ctx: AdditionCstChildren): unknown {
+    // In variable extraction mode, reject addition operations
+    if (this.mode === Mode.extract_variable && ctx.rhs) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     let left = this.visit(ctx.lhs)
 
     if (ctx.rhs) {
@@ -647,6 +680,11 @@ export class CelVisitor
   }
 
   multiplication(ctx: MultiplicationCstChildren) {
+    // In variable extraction mode, reject multiplication operations
+    if (this.mode === Mode.extract_variable && ctx.rhs) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     let left = this.visit(ctx.lhs)
 
     if (ctx.rhs) {
@@ -662,6 +700,11 @@ export class CelVisitor
   }
 
   unaryExpression(ctx: UnaryExpressionCstChildren): unknown {
+    // In variable extraction mode, reject unary operations
+    if (this.mode === Mode.extract_variable && ctx.UnaryOperator) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
     if (ctx.UnaryOperator) {
       const operator = ctx.UnaryOperator
       const operand = this.visit(ctx.atomicExpression)
@@ -1275,8 +1318,13 @@ export class CelVisitor
 
     return expressions.reduce((acc: unknown, expression) => {
       if (expression.name === 'identifierDotExpression') {
+<<<<<<< HEAD
         // Call the visitor method to handle collection macros and optional chaining
       return this.identifierDotExpression(expression.children, acc)
+=======
+        // Call the visitor method to handle collection macros
+        return this.identifierDotExpression(expression.children, acc)
+>>>>>>> chromegg/main
       }
 
       // Handle index expressions (both identifierIndexExpression and Index)
@@ -1402,7 +1450,16 @@ export class CelVisitor
    * - Map expressions
    * - Macro expressions
    */
+<<<<<<< HEAD
   primaryExpression(ctx: PrimaryExpressionCstChildren) {
+=======
+  atomicExpression(ctx: AtomicExpressionCstChildren) {
+    // In variable extraction mode, only allow identifierExpression
+    if (this.mode === Mode.extract_variable && !ctx.identifierExpression) {
+      throw new CelEvaluationError('Variable name must be a simple identifier')
+    }
+
+>>>>>>> chromegg/main
     if (ctx.Null) {
       return null
     }
@@ -1812,6 +1869,14 @@ export class CelVisitor
         )
       }
       return ctx.Identifier[0].image
+<<<<<<< HEAD
+=======
+    }
+
+    // Validate that we have a dot expression when in a has() macro
+    if (this.mode === Mode.has && !ctx.identifierDotExpression?.length) {
+      throw new CelEvaluationError('has() requires a field selection')
+>>>>>>> chromegg/main
     }
 
     // Note: We removed the restrictive has() validation here since
@@ -1958,6 +2023,7 @@ export class CelVisitor
     ctx: IdentifierDotExpressionCstChildren,
     param: unknown,
   ): unknown {
+<<<<<<< HEAD
     // Check if this is optional chaining
     const isOptional = !!ctx.optional
     
@@ -2027,6 +2093,24 @@ export class CelVisitor
 
       return this.handleMethodCall(identifierName, ctx, param)
       }
+=======
+    const identifierName = ctx.Identifier[0].image
+
+    // Check if this is a collection macro call (has parentheses and arguments)
+    if (ctx.OpenParenthesis) {
+      if (this.isCollectionMacro(identifierName)) {
+        return this.handleCollectionMacroCall(
+          identifierName as CollectionMacro,
+          param,
+          ctx,
+        )
+      }
+
+      throw new CelEvaluationError(`Unknown method: ${identifierName}`)
+    }
+
+    // Regular property access
+>>>>>>> chromegg/main
     return this.getIdentifier(param, identifierName)
   }
 
