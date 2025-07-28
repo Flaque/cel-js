@@ -233,16 +233,16 @@ describe('lists expressions', () => {
     })
 
     describe('map', () => {
-      it('should return true when all values satisfy condition', () => {
-        const expr = '{"a": 1, "b": 2, "c": 3}.all(v, v > 0)'
+      it('should return true when all keys satisfy condition', () => {
+        const expr = '{"1": "a", "2": "b", "3": "c"}.all(k, k > "0")'
 
         const result = evaluate(expr)
 
         expect(result).toBe(true)
       })
 
-      it('should return false when not all values satisfy condition', () => {
-        const expr = '{"a": 1, "b": 2, "c": 3}.all(v, v > 2)'
+      it('should return false when not all keys satisfy condition', () => {
+        const expr = '{"1": "a", "2": "b", "0": "c"}.all(k, k > "0")'
 
         const result = evaluate(expr)
 

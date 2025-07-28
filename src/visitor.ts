@@ -147,10 +147,23 @@ export class CelVisitor
   private functions: Record<string, CallableFunction>
 
   /**
+   * Tracks the block context for CEL block operations.
+   */
+  private blockContext?: unknown[]
+
+  /**
    * Checks if the given identifier is a collection macro.
    */
   private isCollectionMacro(identifier: string): boolean {
     return COLLECTION_MACROS.includes(identifier as CollectionMacro)
+  }
+
+  /**
+   * Checks if the context has exactly two arguments (2-parameter form).
+   */
+  private hasExactlyTwoArguments(ctx: IdentifierDotExpressionCstChildren): boolean {
+    const expressions = [...(ctx.arg ? [ctx.arg] : []), ...(ctx.args || [])]
+    return expressions.length === 2
   }
 
   /**
@@ -205,23 +218,18 @@ export class CelVisitor
     // In a real implementation, we'd need to ensure this is specifically an identifier
     const variableName = this.extractVariableName(variableExpr)
 
-    const isMap = this.isMap(collection)
-    const iterationItems = isMap
-      ? Object.keys(collection as Record<string, unknown>) // iterate over keys
-      : (collection as unknown[]) // iterate over values
-
-    // Handle based on macro type
+    // Handle based on macro type - each handler determines its own iteration strategy
     switch (macroName) {
       case 'filter':
-        return this.handleFilter(iterationItems, variableName, predicateExpr)
+        return this.handleFilter([], variableName, predicateExpr, collection)
       case 'map':
-        return this.handleMap(iterationItems, variableName, expressions)
+        return this.handleMap([], variableName, expressions, collection)
       case 'all':
-        return this.handleAll(iterationItems, variableName, predicateExpr)
+        return this.handleAll([], variableName, predicateExpr, collection)
       case 'exists':
-        return this.handleExists(iterationItems, variableName, predicateExpr)
+        return this.handleExists([], variableName, predicateExpr, collection)
       case 'exists_one':
-        return this.handleExistsOne(iterationItems, variableName, predicateExpr)
+        return this.handleExistsOne([], variableName, predicateExpr, collection)
       default:
         throw new CelEvaluationError(`Unknown collection macro: ${macroName}`)
     }
@@ -231,7 +239,7 @@ export class CelVisitor
    * Extracts the variable name from a variable expression, ensuring it's a simple identifier.
    * Reuses the existing visitor infrastructure with a special mode.
    */
-  private extractVariableName(variableExpr: unknown): string {
+  private extractVariableName(variableExpr: unknown, methodName?: string): string {
     const expr = variableExpr as ExprCstNode
 
     // Set extraction mode and use existing visitor traversal
@@ -241,16 +249,20 @@ export class CelVisitor
     try {
       const result = this.visit(expr)
       if (typeof result !== 'string') {
-        throw new CelEvaluationError(
-          'Variable name must be a simple identifier',
-        )
+        const errorMessage = methodName 
+          ? `First argument to ${methodName} must be a variable identifier`
+          : 'Variable name must be a simple identifier'
+        throw new CelEvaluationError(errorMessage)
       }
       return result
     } catch (error) {
       if (error instanceof CelEvaluationError) {
         throw error
       }
-      throw new CelEvaluationError('Variable name must be a simple identifier')
+      const errorMessage = methodName 
+        ? `First argument to ${methodName} must be a variable identifier`
+        : 'Variable name must be a simple identifier'
+      throw new CelEvaluationError(errorMessage)
     } finally {
       this.mode = originalMode
     }
@@ -285,25 +297,109 @@ export class CelVisitor
   }
 
   /**
+   * Checks if a collection came from the context (suggesting a collection macro) 
+   * vs being a direct object/array literal (suggesting a method call)
+   */
+  private isContextBasedCollection(collection: unknown): boolean {
+    // If collection is not an object or array, treat as context-based
+    if (!collection || (typeof collection !== 'object' && !Array.isArray(collection))) {
+      return true
+    }
+    
+    // Check if this collection is a value from our context
+    // This is a simple heuristic - we check if the collection appears as a value in our context
+    for (const contextValue of Object.values(this.context)) {
+      if (contextValue === collection) {
+        return true
+      }
+    }
+    
+    // If it's not found in context, assume it's a direct literal
+    return false
+  }
+
+  /**
+   * Checks if the predicate expression contains indexed access to the original collection using the variable
+   */
+  private isKeyBasedPredicate(predicate: ExprCstNode, variable: string, collection: unknown): boolean {
+    // This is a simplified heuristic - in a full implementation, we'd need proper AST analysis
+    // For now, we'll use a string-based approach to detect patterns like "collection[variable]"
+    
+    // Convert the predicate to a string representation and check for indexed access patterns
+    try {
+      const predicateStr = JSON.stringify(predicate)
+      
+      // Look for patterns that suggest the variable is used as an index
+      // This is a basic heuristic - could be improved with proper AST walking
+      const hasIndexAccess = predicateStr.includes(variable) && 
+                           (predicateStr.includes('[') || predicateStr.includes('indexExpression'))
+      
+      return hasIndexAccess
+    } catch {
+      // If we can't analyze the predicate, default to value-based for safety
+      return false
+    }
+  }
+
+  /**
    * Handles the filter collection macro.
    */
   private handleFilter(
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
-  ): unknown[] {
-    const results: unknown[] = []
-
-    for (const item of iterationItems) {
-      const shouldInclude = this.evaluateWithBinding(predicate, variable, item)
-
-      if (shouldInclude) {
-        // For both maps and lists, return the iteration item (key for maps, value for lists)
-        results.push(item)
+    collection?: unknown,
+  ): unknown[] | Record<string, unknown> {
+    const isMap = this.isMap(collection)
+    
+    if (isMap) {
+      const originalMap = collection as Record<string, unknown>
+      
+      // Determine if this is key-based or value-based filtering
+      const isKeyBased = this.isKeyBasedPredicate(predicate, variable, collection)
+      
+      if (isKeyBased) {
+        // Key-based filtering: variable represents keys, return array of matching keys
+        const results: unknown[] = []
+        
+        for (const key of Object.keys(originalMap)) {
+          const shouldInclude = this.evaluateWithBinding(predicate, variable, key)
+          
+          if (shouldInclude) {
+            results.push(key)
+          }
+        }
+        
+        return results
+      } else {
+        // Value-based filtering: variable represents values, return filtered map
+        const filteredMap: Record<string, unknown> = {}
+        
+        for (const [key, value] of Object.entries(originalMap)) {
+          const shouldInclude = this.evaluateWithBinding(predicate, variable, value)
+          
+          if (shouldInclude) {
+            filteredMap[key] = value
+          }
+        }
+        
+        return filteredMap
       }
-    }
+    } else {
+      // For arrays, return a filtered array
+      const results: unknown[] = []
+      const arrayItems = collection as unknown[]
 
-    return results
+      for (const item of arrayItems) {
+        const shouldInclude = this.evaluateWithBinding(predicate, variable, item)
+
+        if (shouldInclude) {
+          results.push(item)
+        }
+      }
+
+      return results
+    }
   }
 
   /**
@@ -313,15 +409,40 @@ export class CelVisitor
     iterationItems: unknown[],
     variable: string,
     expressions: (ExprCstNode | ExprCstNode[])[],
+    collection?: unknown,
   ): unknown[] {
+    const isMap = this.isMap(collection)
+    
     if (expressions.length === 2) {
       // Simple transform: map(var, transform)
       const transform = Array.isArray(expressions[1])
         ? expressions[1][0]
         : expressions[1]
-      return iterationItems.map((item) =>
-        this.evaluateWithBinding(transform, variable, item),
-      )
+      
+      if (isMap) {
+        const originalMap = collection as Record<string, unknown>
+        
+        // Determine if this is key-based or value-based iteration
+        const isKeyBased = this.isKeyBasedPredicate(transform, variable, collection)
+        
+        if (isKeyBased) {
+          // Key-based: iterate over keys
+          return Object.keys(originalMap).map((key) =>
+            this.evaluateWithBinding(transform, variable, key),
+          )
+        } else {
+          // Value-based: iterate over values  
+          return Object.values(originalMap).map((value) =>
+            this.evaluateWithBinding(transform, variable, value),
+          )
+        }
+      } else {
+        // For arrays, iterate over values
+        const arrayItems = collection as unknown[]
+        return arrayItems.map((item) =>
+          this.evaluateWithBinding(transform, variable, item),
+        )
+      }
     } else if (expressions.length === 3) {
       // Filter + transform: map(var, predicate, transform)
       const predicate = Array.isArray(expressions[1])
@@ -331,24 +452,49 @@ export class CelVisitor
         ? expressions[2][0]
         : expressions[2]
 
-      const results: unknown[] = []
-      for (const item of iterationItems) {
-        const shouldInclude = this.evaluateWithBinding(
-          predicate,
-          variable,
-          item,
-        )
-
-        if (shouldInclude) {
-          const transformed = this.evaluateWithBinding(
-            transform,
-            variable,
-            item,
-          )
-          results.push(transformed)
+      if (isMap) {
+        const originalMap = collection as Record<string, unknown>
+        
+        // Use predicate to determine iteration strategy
+        const isKeyBased = this.isKeyBasedPredicate(predicate, variable, collection)
+        
+        const results: unknown[] = []
+        if (isKeyBased) {
+          // Key-based: iterate over keys
+          for (const key of Object.keys(originalMap)) {
+            const shouldInclude = this.evaluateWithBinding(predicate, variable, key)
+            
+            if (shouldInclude) {
+              const transformed = this.evaluateWithBinding(transform, variable, key)
+              results.push(transformed)
+            }
+          }
+        } else {
+          // Value-based: iterate over values
+          for (const value of Object.values(originalMap)) {
+            const shouldInclude = this.evaluateWithBinding(predicate, variable, value)
+            
+            if (shouldInclude) {
+              const transformed = this.evaluateWithBinding(transform, variable, value)
+              results.push(transformed)
+            }
+          }
         }
+        return results
+      } else {
+        // For arrays, iterate over values
+        const arrayItems = collection as unknown[]
+        const results: unknown[] = []
+        for (const item of arrayItems) {
+          const shouldInclude = this.evaluateWithBinding(predicate, variable, item)
+
+          if (shouldInclude) {
+            const transformed = this.evaluateWithBinding(transform, variable, item)
+            results.push(transformed)
+          }
+        }
+        return results
       }
-      return results
     } else {
       throw new CelEvaluationError('map() requires 2 or 3 arguments')
     }
@@ -361,10 +507,34 @@ export class CelVisitor
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
+    collection?: unknown,
   ): boolean {
-    return iterationItems.every((item) =>
-      this.evaluateWithBinding(predicate, variable, item),
-    )
+    const isMap = this.isMap(collection)
+    
+    if (isMap) {
+      const originalMap = collection as Record<string, unknown>
+      
+      // Determine if this is key-based or value-based iteration
+      const isKeyBased = this.isKeyBasedPredicate(predicate, variable, collection)
+      
+      if (isKeyBased) {
+        // Key-based: iterate over keys
+        return Object.keys(originalMap).every((key) =>
+          this.evaluateWithBinding(predicate, variable, key),
+        )
+      } else {
+        // Value-based: iterate over values  
+        return Object.values(originalMap).every((value) =>
+          this.evaluateWithBinding(predicate, variable, value),
+        )
+      }
+    } else {
+      // For arrays, iterate over values
+      const arrayItems = collection as unknown[]
+      return arrayItems.every((item) =>
+        this.evaluateWithBinding(predicate, variable, item),
+      )
+    }
   }
 
   /**
@@ -374,10 +544,34 @@ export class CelVisitor
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
+    collection?: unknown,
   ): boolean {
-    return iterationItems.some((item) =>
-      this.evaluateWithBinding(predicate, variable, item),
-    )
+    const isMap = this.isMap(collection)
+    
+    if (isMap) {
+      const originalMap = collection as Record<string, unknown>
+      
+      // Determine if this is key-based or value-based iteration
+      const isKeyBased = this.isKeyBasedPredicate(predicate, variable, collection)
+      
+      if (isKeyBased) {
+        // Key-based: iterate over keys
+        return Object.keys(originalMap).some((key) =>
+          this.evaluateWithBinding(predicate, variable, key),
+        )
+      } else {
+        // Value-based: iterate over values  
+        return Object.values(originalMap).some((value) =>
+          this.evaluateWithBinding(predicate, variable, value),
+        )
+      }
+    } else {
+      // For arrays, iterate over values
+      const arrayItems = collection as unknown[]
+      return arrayItems.some((item) =>
+        this.evaluateWithBinding(predicate, variable, item),
+      )
+    }
   }
 
   /**
@@ -387,11 +581,37 @@ export class CelVisitor
     iterationItems: unknown[],
     variable: string,
     predicate: ExprCstNode,
+    collection?: unknown,
   ): boolean {
-    const matches = iterationItems.filter((item) =>
-      this.evaluateWithBinding(predicate, variable, item),
-    )
-    return matches.length === 1
+    const isMap = this.isMap(collection)
+    
+    if (isMap) {
+      const originalMap = collection as Record<string, unknown>
+      
+      // Determine if this is key-based or value-based iteration
+      const isKeyBased = this.isKeyBasedPredicate(predicate, variable, collection)
+      
+      if (isKeyBased) {
+        // Key-based: iterate over keys
+        const matches = Object.keys(originalMap).filter((key) =>
+          this.evaluateWithBinding(predicate, variable, key),
+        )
+        return matches.length === 1
+      } else {
+        // Value-based: iterate over values  
+        const matches = Object.values(originalMap).filter((value) =>
+          this.evaluateWithBinding(predicate, variable, value),
+        )
+        return matches.length === 1
+      }
+    } else {
+      // For arrays, iterate over values
+      const arrayItems = collection as unknown[]
+      const matches = arrayItems.filter((item) =>
+        this.evaluateWithBinding(predicate, variable, item),
+      )
+      return matches.length === 1
+    }
   }
 
   /**
@@ -1318,13 +1538,8 @@ export class CelVisitor
 
     return expressions.reduce((acc: unknown, expression) => {
       if (expression.name === 'identifierDotExpression') {
-<<<<<<< HEAD
         // Call the visitor method to handle collection macros and optional chaining
-      return this.identifierDotExpression(expression.children, acc)
-=======
-        // Call the visitor method to handle collection macros
         return this.identifierDotExpression(expression.children, acc)
->>>>>>> chromegg/main
       }
 
       // Handle index expressions (both identifierIndexExpression and Index)
@@ -1450,16 +1665,12 @@ export class CelVisitor
    * - Map expressions
    * - Macro expressions
    */
-<<<<<<< HEAD
-  primaryExpression(ctx: PrimaryExpressionCstChildren) {
-=======
-  atomicExpression(ctx: AtomicExpressionCstChildren) {
-    // In variable extraction mode, only allow identifierExpression
+primaryExpression(ctx: PrimaryExpressionCstChildren) {
+  // In variable extraction mode, only allow identifierExpression
     if (this.mode === Mode.extract_variable && !ctx.identifierExpression) {
-      throw new CelEvaluationError('Variable name must be a simple identifier')
-    }
+    throw new CelEvaluationError('Variable name must be a simple identifier')
+}
 
->>>>>>> chromegg/main
     if (ctx.Null) {
       return null
     }
@@ -1869,15 +2080,9 @@ export class CelVisitor
         )
       }
       return ctx.Identifier[0].image
-<<<<<<< HEAD
-=======
     }
 
-    // Validate that we have a dot expression when in a has() macro
-    if (this.mode === Mode.has && !ctx.identifierDotExpression?.length) {
-      throw new CelEvaluationError('has() requires a field selection')
->>>>>>> chromegg/main
-    }
+
 
     // Note: We removed the restrictive has() validation here since
     // expressions like TestAllTypes{}.field should be allowed
@@ -2023,7 +2228,7 @@ export class CelVisitor
     ctx: IdentifierDotExpressionCstChildren,
     param: unknown,
   ): unknown {
-<<<<<<< HEAD
+
     // Check if this is optional chaining
     const isOptional = !!ctx.optional
     
@@ -2038,10 +2243,12 @@ export class CelVisitor
     } else {
       throw new Error('No identifier found in dot expression')
     }
+    
+
 
     // Special handling for optional chaining
-      if (isOptional) {
-        // If the target is null/undefined, return optional.none()
+    if (isOptional) {
+      // If the target is null/undefined, return optional.none()
       if (param === null || param === undefined) {
         return optional.none()
       }
@@ -2049,56 +2256,42 @@ export class CelVisitor
       // If the target is already a CelOptional, work with its value
       if (param && typeof param === 'object' && 'hasValue' in param && typeof (param as any).hasValue === 'function') {
         const optionalValue = param as any
-      if (!optionalValue.hasValue()) {
-        return optional.none()
-      }
-      const actualValue = optionalValue.value()
-      
-      // Now try to access the property on the actual value
-      try {
-        if (ctx.OpenParenthesis) {
-        return this.handleMethodCall(identifierName, ctx, actualValue)
-      } else {
-        const result = this.getIdentifier(actualValue, identifierName)
-      return optional.of(result)
-      }
-      } catch {
-        return optional.none()
-      }
+        if (!optionalValue.hasValue()) {
+          return optional.none()
+        }
+        const actualValue = optionalValue.value()
+        
+        // Now try to access the property on the actual value
+        try {
+          if (ctx.OpenParenthesis) {
+            return this.handleMethodCall(identifierName, ctx, actualValue)
+          } else {
+            const result = this.getIdentifier(actualValue, identifierName)
+            return optional.of(result)
+          }
+        } catch {
+          return optional.none()
+        }
       }
       
       // For regular values, try to access the property
       try {
         if (ctx.OpenParenthesis) {
-        return this.handleMethodCall(identifierName, ctx, param)
-      } else {
-        const result = this.getIdentifier(param, identifierName)
-      return optional.of(result)
-      }
+          return this.handleMethodCall(identifierName, ctx, param)
+        } else {
+          const result = this.getIdentifier(param, identifierName)
+          return optional.of(result)
+        }
       } catch {
         return optional.none()
       }
-      }
-      
-      // Regular (non-optional) property access
-      if (ctx.OpenParenthesis) {
-        // Check if this is a collection macro call first
-      if (this.isCollectionMacro(identifierName)) {
-          return this.handleCollectionMacroCall(
-          identifierName as CollectionMacro,
-          param,
-            ctx,
-        )
-        }
-
-      return this.handleMethodCall(identifierName, ctx, param)
-      }
-=======
-    const identifierName = ctx.Identifier[0].image
-
-    // Check if this is a collection macro call (has parentheses and arguments)
+    }
+    
+    // Regular (non-optional) property access
     if (ctx.OpenParenthesis) {
-      if (this.isCollectionMacro(identifierName)) {
+      // Check if this is a collection macro call first (only for 2-parameter forms)
+      // But prefer method calls for direct object literals or arrays
+      if (this.isCollectionMacro(identifierName) && this.hasExactlyTwoArguments(ctx) && this.isContextBasedCollection(param)) {
         return this.handleCollectionMacroCall(
           identifierName as CollectionMacro,
           param,
@@ -2106,11 +2299,10 @@ export class CelVisitor
         )
       }
 
-      throw new CelEvaluationError(`Unknown method: ${identifierName}`)
+      return this.handleMethodCall(identifierName, ctx, param)
     }
 
     // Regular property access
->>>>>>> chromegg/main
     return this.getIdentifier(param, identifierName)
   }
 
@@ -2431,6 +2623,7 @@ export class CelVisitor
       return this.handleStringMethod(methodName, ctx, collection)
     }
 
+
     switch (methodName) {
       case 'all':
         return this.handleAllMethod(ctx, collection)
@@ -2440,6 +2633,7 @@ export class CelVisitor
       case 'existsOne':
         return this.handleExistsOneMethod(ctx, collection)
       case 'filter':
+
         return this.handleFilterMethod(ctx, collection)
       case 'map':
         return this.handleMapMethod(ctx, collection)
@@ -2509,12 +2703,12 @@ export class CelVisitor
 
       // Handle maps (objects)
       if (typeof collection === 'object') {
-        const values = Object.values(collection)
-        if (values.length === 0) {
+        const keys = Object.keys(collection)
+        if (keys.length === 0) {
           return true // Empty objects return true (vacuous truth)
         }
-        // For 2-parameter form on maps, iterate over values
-        return this.evaluateAllForArray(values, variableExpr, predicateExpr)
+        // For 2-parameter form on maps, iterate over keys
+        return this.evaluateAllForArray(keys, variableExpr, predicateExpr)
       }
     } else if (ctx.args.length === 2) {
       // 3-parameter version: index/key variable, value variable, and predicate
@@ -3186,6 +3380,7 @@ export class CelVisitor
     ctx: IdentifierDotExpressionCstChildren,
     collection: unknown,
   ): unknown {
+
     // Validate collection type
     if (!Array.isArray(collection) && (typeof collection !== 'object' || collection === null)) {
       throw new CelEvaluationError('filter() can only be called on lists or maps')
@@ -3345,7 +3540,6 @@ export class CelVisitor
       // Create a new context with the loop variable
       const originalValue = this.context[variableName]
       this.context[variableName] = value
-
       try {
         const result = this.visit(predicateExpr)
         if (result) {
@@ -3709,46 +3903,7 @@ export class CelVisitor
     return mappedMap
   }
 
-  /**
-   * Extracts variable name from expression - helper method to reduce code duplication
-   */
-  private extractVariableName(variableExpr: any, methodName: string): string {
-    // Navigate through the CST structure to find the identifier
-    function extractIdentifier(node: any): string | null {
-      if (node.children) {
-        if (node.children.Identifier) {
-          return node.children.Identifier[0].image
-        }
-        // Recursively search for identifier in nested structures
-        for (const key of Object.keys(node.children)) {
-          const child = node.children[key]
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              const result = extractIdentifier(item)
-              if (result) return result
-            }
-          } else {
-            const result = extractIdentifier(child)
-            if (result) return result
-          }
-        }
-      }
-      return null
-    }
-    
-    // Handle the case where variableExpr is an array
-    let nodeToSearch = variableExpr
-    if (Array.isArray(variableExpr) && variableExpr.length > 0) {
-      nodeToSearch = variableExpr[0]
-    }
-    
-    const extractedName = extractIdentifier(nodeToSearch)
-    if (extractedName) {
-      return extractedName
-    } else {
-      throw new CelEvaluationError(`First argument to ${methodName} must be a variable identifier`)
-    }
-  }
+
 
   /**
    * Handles the .size() method call
