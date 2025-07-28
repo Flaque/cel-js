@@ -44,7 +44,9 @@ describe('lists expressions', () => {
 
       expect(() => evaluate('has(object)', context)).toThrow(atomicErrorMessage)
 
-      expect(() => evaluate('has(object[0])', context)).toThrow(fieldSelectionErrorMessage)
+      expect(() => evaluate('has(object[0])', context)).toThrow(
+        fieldSelectionErrorMessage,
+      )
 
       expect(() => evaluate('has(object[property])', context)).toThrow(
         fieldSelectionErrorMessage,
@@ -153,8 +155,6 @@ describe('lists expressions', () => {
         expect(result).toBe(3)
       })
     })
-
-
   })
 
   describe('all', () => {
@@ -272,7 +272,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('all() requires exactly two arguments: variable and predicate')
+        expect(result).toThrow(
+          'all() requires exactly two arguments: variable and predicate',
+        )
       })
     })
   })
@@ -400,7 +402,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('exists() requires exactly two arguments: variable and predicate')
+        expect(result).toThrow(
+          'exists() requires exactly two arguments: variable and predicate',
+        )
       })
     })
   })
@@ -488,7 +492,8 @@ describe('lists expressions', () => {
       })
 
       it('should work with nested exists_one calls', () => {
-        const expr = '[[1, 0], [3, 4], [5, 6]].exists_one(arr, arr.exists_one(n, n == 0))'
+        const expr =
+          '[[1, 0], [3, 4], [5, 6]].exists_one(arr, arr.exists_one(n, n == 0))'
 
         const result = evaluate(expr)
 
@@ -560,7 +565,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('exists_one() requires exactly two arguments: variable and predicate')
+        expect(result).toThrow(
+          'exists_one() requires exactly two arguments: variable and predicate',
+        )
       })
     })
   })
@@ -572,7 +579,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([4, 5])
+        expect(result).toStrictEqual([4, 5])
       })
 
       it('should return empty array when no elements satisfy condition', () => {
@@ -580,7 +587,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([])
+        expect(result).toStrictEqual([])
       })
 
       it('should return all elements when all satisfy condition', () => {
@@ -588,7 +595,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([1, 2, 3])
+        expect(result).toStrictEqual([1, 2, 3])
       })
 
       it('should return empty array for empty list', () => {
@@ -596,7 +603,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([])
+        expect(result).toStrictEqual([])
       })
 
       it('should work with string elements', () => {
@@ -604,7 +611,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual(["hello", "world", "test"])
+        expect(result).toStrictEqual(['hello', 'world', 'test'])
       })
 
       it('should work with boolean elements', () => {
@@ -612,7 +619,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([true, true])
+        expect(result).toStrictEqual([true, true])
       })
 
       it('should work with complex conditions', () => {
@@ -620,23 +627,30 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([10, 20, 30])
+        expect(result).toStrictEqual([10, 20, 30])
       })
 
       it('should work with variable from context', () => {
         const expr = 'numbers.filter(n, n > threshold)'
 
-        const result = evaluate(expr, { numbers: [1, 8, 15, 3, 12], threshold: 10 })
+        const result = evaluate(expr, {
+          numbers: [1, 8, 15, 3, 12],
+          threshold: 10,
+        })
 
-        expect(result).toEqual([15, 12])
+        expect(result).toStrictEqual([15, 12])
       })
 
       it('should work with nested filter calls', () => {
-        const expr = '[[1, 2], [3, 4], [5, 6]].filter(arr, arr.filter(n, n > 3) != [])'
+        const expr =
+          '[[1, 2], [3, 4], [5, 6]].filter(arr, arr.filter(n, n > 3) != [])'
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([[3, 4], [5, 6]])
+        expect(result).toStrictEqual([
+          [3, 4],
+          [5, 6],
+        ])
       })
 
       it('should preserve order of elements', () => {
@@ -644,7 +658,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([5, 8, 9])
+        expect(result).toStrictEqual([5, 8, 9])
       })
 
       it('should work with numbers only', () => {
@@ -652,7 +666,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([3, 5, 7])
+        expect(result).toStrictEqual([3, 5, 7])
       })
     })
 
@@ -662,7 +676,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"c": 3, "d": 4})
+        expect(result).toStrictEqual({ c: 3, d: 4 })
       })
 
       it('should return empty map when no values satisfy condition', () => {
@@ -670,7 +684,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({})
+        expect(result).toStrictEqual({})
       })
 
       it('should return all entries when all values satisfy condition', () => {
@@ -678,7 +692,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"a": 1, "b": 2, "c": 3})
+        expect(result).toStrictEqual({ a: 1, b: 2, c: 3 })
       })
 
       it('should return empty map for empty map', () => {
@@ -686,15 +700,20 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({})
+        expect(result).toStrictEqual({})
       })
 
       it('should work with string values', () => {
-        const expr = '{"name": "John", "city": "NYC", "age": "25", "country": "USA"}.filter(v, size(v) >= 3)'
+        const expr =
+          '{"name": "John", "city": "NYC", "age": "25", "country": "USA"}.filter(v, size(v) >= 3)'
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"name": "John", "city": "NYC", "country": "USA"})
+        expect(result).toStrictEqual({
+          name: 'John',
+          city: 'NYC',
+          country: 'USA',
+        })
       })
 
       it('should preserve key-value relationships', () => {
@@ -702,7 +721,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"medium": 5, "high": 10})
+        expect(result).toStrictEqual({ medium: 5, high: 10 })
       })
     })
 
@@ -720,7 +739,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('filter() requires exactly two arguments: variable and predicate')
+        expect(result).toThrow(
+          'filter() requires exactly two arguments: variable and predicate',
+        )
       })
     })
   })
@@ -732,7 +753,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([2, 4, 6])
+        expect(result).toStrictEqual([2, 4, 6])
       })
 
       it('should transform string elements', () => {
@@ -740,7 +761,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([5, 5])
+        expect(result).toStrictEqual([5, 5])
       })
 
       it('should transform with complex expressions', () => {
@@ -748,7 +769,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([2, 5, 10])
+        expect(result).toStrictEqual([2, 5, 10])
       })
 
       it('should return empty array for empty list', () => {
@@ -756,7 +777,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([])
+        expect(result).toStrictEqual([])
       })
 
       it('should work with variable from context', () => {
@@ -764,7 +785,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr, { numbers: [1, 2, 3], offset: 10 })
 
-        expect(result).toEqual([11, 12, 13])
+        expect(result).toStrictEqual([11, 12, 13])
       })
 
       it('should preserve order', () => {
@@ -772,7 +793,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([50, 10, 30])
+        expect(result).toStrictEqual([50, 10, 30])
       })
 
       it('should handle nested map calls', () => {
@@ -780,7 +801,10 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([[2, 4], [6, 8]])
+        expect(result).toStrictEqual([
+          [2, 4],
+          [6, 8],
+        ])
       })
     })
 
@@ -790,7 +814,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([6, 8, 10])
+        expect(result).toStrictEqual([6, 8, 10])
       })
 
       it('should return empty array when no elements match predicate', () => {
@@ -798,7 +822,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([])
+        expect(result).toStrictEqual([])
       })
 
       it('should transform all elements when all match predicate', () => {
@@ -806,7 +830,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([2, 4, 6])
+        expect(result).toStrictEqual([2, 4, 6])
       })
 
       it('should work with string filtering and transformation', () => {
@@ -814,7 +838,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([5, 5])
+        expect(result).toStrictEqual([5, 5])
       })
 
       it('should work with complex conditions and transformations', () => {
@@ -822,15 +846,19 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual([4, 16])
+        expect(result).toStrictEqual([4, 16])
       })
 
       it('should work with variable from context', () => {
         const expr = 'numbers.map(n, n > threshold, n * multiplier)'
 
-        const result = evaluate(expr, { numbers: [1, 5, 10, 15], threshold: 7, multiplier: 3 })
+        const result = evaluate(expr, {
+          numbers: [1, 5, 10, 15],
+          threshold: 7,
+          multiplier: 3,
+        })
 
-        expect(result).toEqual([30, 45])
+        expect(result).toStrictEqual([30, 45])
       })
     })
 
@@ -840,7 +868,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"a": 2, "b": 4, "c": 6})
+        expect(result).toStrictEqual({ a: 2, b: 4, c: 6 })
       })
 
       it('should transform string values', () => {
@@ -848,7 +876,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"name": 4, "city": 3})
+        expect(result).toStrictEqual({ name: 4, city: 3 })
       })
 
       it('should return empty map for empty map', () => {
@@ -856,7 +884,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({})
+        expect(result).toStrictEqual({})
       })
 
       it('should preserve keys', () => {
@@ -864,7 +892,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"x": 1, "y": 2})
+        expect(result).toStrictEqual({ x: 1, y: 2 })
       })
     })
 
@@ -874,7 +902,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"c": 6, "d": 8})
+        expect(result).toStrictEqual({ c: 6, d: 8 })
       })
 
       it('should return empty map when no values match predicate', () => {
@@ -882,7 +910,7 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({})
+        expect(result).toStrictEqual({})
       })
 
       it('should transform all values when all match predicate', () => {
@@ -890,15 +918,16 @@ describe('lists expressions', () => {
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"a": 11, "b": 12, "c": 13})
+        expect(result).toStrictEqual({ a: 11, b: 12, c: 13 })
       })
 
       it('should work with string filtering and transformation', () => {
-        const expr = '{"name": "John", "age": "25", "city": "NYC"}.map(v, size(v) > 3, size(v))'
+        const expr =
+          '{"name": "John", "age": "25", "city": "NYC"}.map(v, size(v) > 3, size(v))'
 
         const result = evaluate(expr)
 
-        expect(result).toEqual({"name": 4})
+        expect(result).toStrictEqual({ name: 4 })
       })
     })
 
@@ -916,7 +945,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('map() requires either two arguments (variable, transform) or three arguments (variable, predicate, transform)')
+        expect(result).toThrow(
+          'map() requires either two arguments (variable, transform) or three arguments (variable, predicate, transform)',
+        )
       })
 
       it('should throw when too many arguments (four arguments)', () => {
@@ -924,7 +955,9 @@ describe('lists expressions', () => {
 
         const result = () => evaluate(expr)
 
-        expect(result).toThrow('map() requires either two arguments (variable, transform) or three arguments (variable, predicate, transform)')
+        expect(result).toThrow(
+          'map() requires either two arguments (variable, transform) or three arguments (variable, predicate, transform)',
+        )
       })
     })
   })

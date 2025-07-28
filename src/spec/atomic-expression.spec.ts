@@ -92,7 +92,7 @@ o'`
     const result = evaluate(expr)
 
     expect(Number(result)).toBe(1.2)
-    expect(result.valueOf()).toBe(1.2)
+    expect(result?.valueOf()).toBe(1.2)
   })
 
   describe('raw strings', () => {
@@ -247,7 +247,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([104, 101, 108, 108, 111])) // "hello" as bytes
+      expect(result).toStrictEqual(new Uint8Array([104, 101, 108, 108, 111])) // "hello" as bytes
     })
 
     it('should evaluate a byte string with single quotes', () => {
@@ -255,7 +255,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([119, 111, 114, 108, 100])) // "world" as bytes
+      expect(result).toStrictEqual(new Uint8Array([119, 111, 114, 108, 100])) // "world" as bytes
     })
 
     it('should handle hex escape sequences in byte strings', () => {
@@ -263,7 +263,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC in hex
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC in hex
     })
 
     it('should handle octal escape sequences in byte strings', () => {
@@ -271,7 +271,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC in octal
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC in octal
     })
 
     it('should handle mixed ASCII and escape sequences', () => {
@@ -279,7 +279,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC
     })
 
     it('should handle common escape sequences in byte strings', () => {
@@ -287,7 +287,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([10, 9, 13, 92])) // \n, \t, \r, \\
+      expect(result).toStrictEqual(new Uint8Array([10, 9, 13, 92])) // \n, \t, \r, \\
     })
 
     it('should handle quotes inside byte strings', () => {
@@ -295,7 +295,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([83, 97, 121, 32, 34, 104, 101, 108, 108, 111, 34])) // 'Say "hello"'
+      expect(result).toStrictEqual(new Uint8Array([83, 97, 121, 32, 34, 104, 101, 108, 108, 111, 34])) // 'Say "hello"'
     })
 
     it('should handle empty byte strings', () => {
@@ -303,7 +303,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([]))
+      expect(result).toStrictEqual(new Uint8Array([]))
     })
 
     it('should handle byte strings with null bytes', () => {
@@ -311,7 +311,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([0, 1, 2]))
+      expect(result).toStrictEqual(new Uint8Array([0, 1, 2]))
     })
 
     it('should handle byte strings with high byte values', () => {
@@ -319,7 +319,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([255, 254, 253]))
+      expect(result).toStrictEqual(new Uint8Array([255, 254, 253]))
     })
   })
 
@@ -329,7 +329,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC
     })
 
     it('should evaluate a bytes literal with decimal values', () => {
@@ -337,7 +337,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([72, 101, 108, 108, 111])) // "Hello"
+      expect(result).toStrictEqual(new Uint8Array([72, 101, 108, 108, 111])) // "Hello"
     })
 
     it('should evaluate an empty bytes literal', () => {
@@ -345,7 +345,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([]))
+      expect(result).toStrictEqual(new Uint8Array([]))
     })
 
     it('should handle bytes literal with single value', () => {
@@ -353,7 +353,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65])) // "A"
+      expect(result).toStrictEqual(new Uint8Array([65])) // "A"
     })
 
     it('should handle bytes literal with null bytes', () => {
@@ -361,7 +361,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([0, 1, 2]))
+      expect(result).toStrictEqual(new Uint8Array([0, 1, 2]))
     })
 
     it('should handle bytes literal with max byte values', () => {
@@ -369,7 +369,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([255, 254, 253]))
+      expect(result).toStrictEqual(new Uint8Array([255, 254, 253]))
     })
 
     it('should handle bytes literal with mixed decimal and hex values', () => {
@@ -377,7 +377,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC
     })
 
     it('should handle bytes literal from string conversion', () => {
@@ -385,7 +385,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([65, 66, 67])) // ABC
+      expect(result).toStrictEqual(new Uint8Array([65, 66, 67])) // ABC
     })
 
     it('should handle bytes literal from empty string', () => {
@@ -393,7 +393,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([]))
+      expect(result).toStrictEqual(new Uint8Array([]))
     })
 
     it('should handle bytes literal with unicode string', () => {
@@ -401,7 +401,7 @@ line3"""`
 
       const result = evaluate(expr)
 
-      expect(result).toEqual(new Uint8Array([99, 97, 102, 195, 169])) // UTF-8 encoding of "café"
+      expect(result).toStrictEqual(new Uint8Array([99, 97, 102, 195, 169])) // UTF-8 encoding of "café"
     })
   })
 })

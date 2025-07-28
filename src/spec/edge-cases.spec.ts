@@ -8,10 +8,10 @@ describe('CEL Edge Cases & Missing Features', () => {
       // Test the string methods we've implemented
       expect(evaluate('"hello".endsWith("lo")')).toBe(true)
       expect(evaluate('"hello world".contains("world")')).toBe(true)
-      expect(evaluate('"a,b,c".split(",")')).toEqual(["a", "b", "c"])
+      expect(evaluate('"a,b,c".split(",")')).toStrictEqual(['a', 'b', 'c'])
       expect(evaluate('"hello".size()')).toBe(5)
       expect(evaluate('"  hello  ".trim()')).toBe('hello')
-      
+
       // startsWith is also implemented
       expect(evaluate('"hello".startsWith("he")')).toBe(true)
     })
@@ -69,7 +69,7 @@ describe('CEL Edge Cases & Missing Features', () => {
     it('should handle null in collections', () => {
       const expr = '[1, null, 3].filter(x, x != null)'
       const result = evaluate(expr)
-      expect(result).toEqual([1, 3])
+      expect(result).toStrictEqual([1, 3])
     })
   })
 
@@ -77,14 +77,15 @@ describe('CEL Edge Cases & Missing Features', () => {
     it('should handle deeply nested objects', () => {
       const expr = 'a.b.c.d.e.f.g.h.i.j'
       const context = {
-        a: { b: { c: { d: { e: { f: { g: { h: { i: { j: 42 } } } } } } } } }
+        a: { b: { c: { d: { e: { f: { g: { h: { i: { j: 42 } } } } } } } } },
       }
       const result = evaluate(expr, context)
       expect(result).toBe(42)
     })
 
     it('should handle deeply nested expressions', () => {
-      const expr = '((((((((((1 + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)'
+      const expr =
+        '((((((((((1 + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)'
       const result = evaluate(expr)
       expect(result).toBe(11)
     })
@@ -98,10 +99,22 @@ describe('CEL Edge Cases & Missing Features', () => {
         )
       `
       const result = evaluate(expr)
-      expect(result).toEqual([
-        [[32, 36], [40, 45], [48, 54]],
-        [[64, 72], [80, 90], [96, 108]],
-        [[96, 108], [120, 135], [144, 162]]
+      expect(result).toStrictEqual([
+        [
+          [32, 36],
+          [40, 45],
+          [48, 54],
+        ],
+        [
+          [64, 72],
+          [80, 90],
+          [96, 108],
+        ],
+        [
+          [96, 108],
+          [120, 135],
+          [144, 162],
+        ],
       ])
     })
   })
@@ -110,7 +123,7 @@ describe('CEL Edge Cases & Missing Features', () => {
     it('should handle unicode strings', () => {
       const expr = '"Hello 世界! 🌍"'
       const result = evaluate(expr)
-      expect(result).toBe("Hello 世界! 🌍")
+      expect(result).toBe('Hello 世界! 🌍')
     })
 
     it('should handle unicode in size calculation', () => {
@@ -123,7 +136,7 @@ describe('CEL Edge Cases & Missing Features', () => {
       const expr = '"line1\\nline2\\ttab\\r\\n"'
       const result = evaluate(expr)
       // Escape sequences should be processed correctly
-      expect(result).toBe("line1\nline2\ttab\r\n")
+      expect(result).toBe('line1\nline2\ttab\r\n')
     })
   })
 
@@ -138,12 +151,12 @@ describe('CEL Edge Cases & Missing Features', () => {
         { expr: '{}.all(v, v > 0)', expected: true },
         { expr: '{}.exists(v, v > 0)', expected: false },
         { expr: '{}.filter(v, v > 0)', expected: {} },
-        { expr: '{}.map(v, v * 2)', expected: {} }
+        { expr: '{}.map(v, v * 2)', expected: {} },
       ]
 
-      tests.forEach(test => {
+      tests.forEach((test) => {
         const result = evaluate(test.expr)
-        expect(result).toEqual(test.expected)
+        expect(result).toStrictEqual(test.expected)
       })
     })
 
@@ -169,7 +182,10 @@ describe('CEL Edge Cases & Missing Features', () => {
         )
       `
       const result = evaluate(expr)
-      expect(result).toEqual([[30, 40], [30, 40]])
+      expect(result).toStrictEqual([
+        [30, 40],
+        [30, 40],
+      ])
     })
 
     it('should handle complex variable scoping', () => {
@@ -180,17 +196,17 @@ describe('CEL Edge Cases & Missing Features', () => {
       `
       const context = {
         outer: [1, 2, 3],
-        inner: [2, 3, 4]
+        inner: [2, 3, 4],
       }
       const result = evaluate(expr, context)
-      expect(result).toEqual([false, true, true])
+      expect(result).toStrictEqual([false, true, true])
     })
 
     it('should preserve context after macro execution', () => {
       const expr = `
         [1, 2, 3].all(value, value > 0) && value == "original"
       `
-      const context = { value: "original" }
+      const context = { value: 'original' }
       const result = evaluate(expr, context)
       expect(result).toBe(true)
     })
@@ -267,7 +283,7 @@ describe('CEL Edge Cases & Missing Features', () => {
         )
       `
       const result = evaluate(expr)
-      expect(result).toEqual([2, 4, 6])
+      expect(result).toStrictEqual([2, 4, 6])
     })
   })
 
@@ -289,21 +305,24 @@ describe('CEL Edge Cases & Missing Features', () => {
     it('should handle various byte string formats', () => {
       const tests = [
         { expr: 'b"\\x00\\x01\\x02"', expected: new Uint8Array([0, 1, 2]) },
-        { expr: 'b"\\377\\376\\375"', expected: new Uint8Array([255, 254, 253]) }, // Octal
+        {
+          expr: 'b"\\377\\376\\375"',
+          expected: new Uint8Array([255, 254, 253]),
+        }, // Octal
         // Unicode escapes in byte strings not yet implemented
         // { expr: 'b"\\u0041\\u0042"', expected: new Uint8Array([65, 66]) },
       ]
 
-      tests.forEach(test => {
+      tests.forEach((test) => {
         const result = evaluate(test.expr)
-        expect(result).toEqual(test.expected)
+        expect(result).toStrictEqual(test.expected)
       })
     })
 
     it('should handle empty byte strings', () => {
       const expr = 'b""'
       const result = evaluate(expr)
-      expect(result).toEqual(new Uint8Array([]))
+      expect(result).toStrictEqual(new Uint8Array([]))
     })
 
     it('should handle byte string comparisons', () => {

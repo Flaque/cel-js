@@ -117,7 +117,9 @@ describe('String Methods', () => {
     })
 
     it('should handle mixed whitespace characters', () => {
-      expect(evaluate('"  \\t\\n hello world \\r\\n\\t  ".trim()')).toBe('hello world')
+      expect(evaluate('"  \\t\\n hello world \\r\\n\\t  ".trim()')).toBe(
+        'hello world',
+      )
     })
 
     it('should preserve internal whitespace', () => {
@@ -141,50 +143,79 @@ describe('String Methods', () => {
 
   describe('split() method', () => {
     it('should split string by separator', () => {
-      expect(evaluate('"a,b,c".split(",")')).toEqual(['a', 'b', 'c'])
-      expect(evaluate('"hello world".split(" ")')).toEqual(['hello', 'world'])
-      expect(evaluate('"one|two|three".split("|")')).toEqual(['one', 'two', 'three'])
+      expect(evaluate('"a,b,c".split(",")')).toStrictEqual(['a', 'b', 'c'])
+      expect(evaluate('"hello world".split(" ")')).toStrictEqual([
+        'hello',
+        'world',
+      ])
+      expect(evaluate('"one|two|three".split("|")')).toStrictEqual([
+        'one',
+        'two',
+        'three',
+      ])
     })
 
     it('should handle empty separator', () => {
-      expect(evaluate('"abc".split("")')).toEqual(['a', 'b', 'c'])
-      expect(evaluate('"hi".split("")')).toEqual(['h', 'i'])
+      expect(evaluate('"abc".split("")')).toStrictEqual(['a', 'b', 'c'])
+      expect(evaluate('"hi".split("")')).toStrictEqual(['h', 'i'])
     })
 
     it('should handle separator not found', () => {
-      expect(evaluate('"hello world".split("x")')).toEqual(['hello world'])
-      expect(evaluate('"abc".split("z")')).toEqual(['abc'])
+      expect(evaluate('"hello world".split("x")')).toStrictEqual([
+        'hello world',
+      ])
+      expect(evaluate('"abc".split("z")')).toStrictEqual(['abc'])
     })
 
     it('should handle empty string', () => {
-      expect(evaluate('"".split(",")')).toEqual([''])
-      expect(evaluate('"".split("")')).toEqual([])
+      expect(evaluate('"".split(",")')).toStrictEqual([''])
+      expect(evaluate('"".split("")')).toStrictEqual([])
     })
 
     it('should handle consecutive separators', () => {
-      expect(evaluate('"a,,b".split(",")')).toEqual(['a', '', 'b'])
-      expect(evaluate('"a::b::c".split("::")')).toEqual(['a', 'b', 'c'])
+      expect(evaluate('"a,,b".split(",")')).toStrictEqual(['a', '', 'b'])
+      expect(evaluate('"a::b::c".split("::")')).toStrictEqual(['a', 'b', 'c'])
     })
 
     it('should handle leading and trailing separators', () => {
-      expect(evaluate('",a,b,".split(",")')).toEqual(['', 'a', 'b', ''])
-      expect(evaluate('"::a::b::".split("::")')).toEqual(['', 'a', 'b', ''])
+      expect(evaluate('",a,b,".split(",")')).toStrictEqual(['', 'a', 'b', ''])
+      expect(evaluate('"::a::b::".split("::")')).toStrictEqual([
+        '',
+        'a',
+        'b',
+        '',
+      ])
     })
 
     it('should handle multi-character separators', () => {
-      expect(evaluate('"a::b::c".split("::")')).toEqual(['a', 'b', 'c'])
-      expect(evaluate('"hello-->world-->test".split("-->")')).toEqual(['hello', 'world', 'test'])
+      expect(evaluate('"a::b::c".split("::")')).toStrictEqual(['a', 'b', 'c'])
+      expect(evaluate('"hello-->world-->test".split("-->")')).toStrictEqual([
+        'hello',
+        'world',
+        'test',
+      ])
     })
 
     it('should handle special characters as separators', () => {
-      expect(evaluate('"a.b.c".split(".")')).toEqual(['a', 'b', 'c'])
-      expect(evaluate('"path/to/file".split("/")')).toEqual(['path', 'to', 'file'])
-      expect(evaluate('"line1\\nline2\\nline3".split("\\n")')).toEqual(['line1', 'line2', 'line3'])
+      expect(evaluate('"a.b.c".split(".")')).toStrictEqual(['a', 'b', 'c'])
+      expect(evaluate('"path/to/file".split("/")')).toStrictEqual([
+        'path',
+        'to',
+        'file',
+      ])
+      expect(evaluate('"line1\\nline2\\nline3".split("\\n")')).toStrictEqual([
+        'line1',
+        'line2',
+        'line3',
+      ])
     })
 
     it('should handle unicode characters', () => {
-      expect(evaluate('"café🚀world".split("🚀")')).toEqual(['café', 'world'])
-      expect(evaluate('"a•b•c".split("•")')).toEqual(['a', 'b', 'c'])
+      expect(evaluate('"café🚀world".split("🚀")')).toStrictEqual([
+        'café',
+        'world',
+      ])
+      expect(evaluate('"a•b•c".split("•")')).toStrictEqual(['a', 'b', 'c'])
     })
 
     it('should throw error with wrong number of arguments', () => {
@@ -215,10 +246,16 @@ describe('String Methods', () => {
 
   describe('Integration with other features', () => {
     it('should work with variables', () => {
-      expect(evaluate('str.contains("world")', { str: 'hello world' })).toBe(true)
+      expect(evaluate('str.contains("world")', { str: 'hello world' })).toBe(
+        true,
+      )
       expect(evaluate('str.endsWith("txt")', { str: 'file.txt' })).toBe(true)
       expect(evaluate('str.trim()', { str: '  hello  ' })).toBe('hello')
-      expect(evaluate('str.split(",")', { str: 'a,b,c' })).toEqual(['a', 'b', 'c'])
+      expect(evaluate('str.split(",")', { str: 'a,b,c' })).toStrictEqual([
+        'a',
+        'b',
+        'c',
+      ])
     })
 
     it('should work with function results', () => {
@@ -227,14 +264,26 @@ describe('String Methods', () => {
     })
 
     it('should work in complex expressions', () => {
-      expect(evaluate('"hello world".contains("world") && "file.txt".endsWith(".txt")')).toBe(true)
+      expect(
+        evaluate(
+          '"hello world".contains("world") && "file.txt".endsWith(".txt")',
+        ),
+      ).toBe(true)
       expect(evaluate('"  test  ".trim().size() == 4')).toBe(true)
       expect(evaluate('"a,b,c".split(",").all(x, x.size() == 1)')).toBe(true)
     })
 
     it('should work with conditional expressions', () => {
-      expect(evaluate('str.contains("test") ? str.split(",") : []', { str: 'test,data' })).toEqual(['test', 'data'])
-      expect(evaluate('str.endsWith(".log") ? str.trim() : str', { str: '  error.log' })).toBe('error.log')
+      expect(
+        evaluate('str.contains("test") ? str.split(",") : []', {
+          str: 'test,data',
+        }),
+      ).toStrictEqual(['test', 'data'])
+      expect(
+        evaluate('str.endsWith(".log") ? str.trim() : str', {
+          str: '  error.log',
+        }),
+      ).toBe('error.log')
     })
   })
 })

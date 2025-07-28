@@ -32,7 +32,7 @@ describe('maps expressions', () => {
 
       const result = evaluate(expr)
 
-      expect(result).toEqual({"a": 1, "b": true, "c": "string", "d": [1, 2, 3]})
+      expect(result).toStrictEqual({ a: 1, b: true, c: 'string', d: [1, 2, 3] })
     })
   })
 
@@ -53,8 +53,6 @@ describe('maps expressions', () => {
 
         expect(result).toThrow('Identifier "b" not found, no context passed')
       })
-
-
     })
     describe('index expression', () => {
       it('should get the value of a key', () => {

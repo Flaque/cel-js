@@ -15,13 +15,13 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         user: {
-          id: "user123",
-          roles: ["editor", "viewer"]
+          id: 'user123',
+          roles: ['editor', 'viewer'],
         },
         request: {
-          method: "POST",
-          resource: { owner: "user123", type: "document" }
-        }
+          method: 'POST',
+          resource: { owner: 'user123', type: 'document' },
+        },
       }
 
       const result = evaluate(expr, context)
@@ -41,22 +41,22 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         resource: {
-          type: "file",
-          department: "engineering",
+          type: 'file',
+          department: 'engineering',
           metadata: {
-            tags: ["public", "documentation", "reviewed"]
-          }
+            tags: ['public', 'documentation', 'reviewed'],
+          },
         },
         user: {
           permissions: [
             {
-              resource: "file",
-              action: "read",
-              scope: [{ departments: ["engineering", "qa"] }]
-            }
-          ]
+              resource: 'file',
+              action: 'read',
+              scope: [{ departments: ['engineering', 'qa'] }],
+            },
+          ],
         },
-        request: { action: "read" }
+        request: { action: 'read' },
       }
 
       const result = evaluate(expr, context)
@@ -74,47 +74,44 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         users: [
-          { 
-            firstName: "John", 
-            lastName: "Doe", 
-            email: "john@example.com", 
-            age: 25, 
+          {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john@example.com',
+            age: 25,
             active: true,
-            roles: ["user", "temporary", "reviewer"]
+            roles: ['user', 'temporary', 'reviewer'],
           },
-          { 
-            firstName: "Jane", 
-            lastName: "Smith", 
-            email: "jane@example.com", 
-            age: 17, 
+          {
+            firstName: 'Jane',
+            lastName: 'Smith',
+            email: 'jane@example.com',
+            age: 17,
             active: true,
-            roles: ["user"]
+            roles: ['user'],
           },
-          { 
-            firstName: "Bob", 
-            lastName: "Wilson", 
-            email: "bob@example.com", 
-            age: 35, 
+          {
+            firstName: 'Bob',
+            lastName: 'Wilson',
+            email: 'bob@example.com',
+            age: 35,
             active: false,
-            roles: ["admin", "user"]
+            roles: ['admin', 'user'],
           },
-          { 
-            firstName: "Alice", 
-            lastName: "Johnson", 
-            email: "alice@example.com", 
-            age: 40, 
+          {
+            firstName: 'Alice',
+            lastName: 'Johnson',
+            email: 'alice@example.com',
+            age: 40,
             active: true,
-            roles: ["admin", "reviewer"]
-          }
-        ]
+            roles: ['admin', 'reviewer'],
+          },
+        ],
       }
 
       const result = evaluate(expr, context)
-      
-      expect(result).toEqual([
-        "John Doe",
-        "Alice Johnson"
-      ])
+
+      expect(result).toStrictEqual(['John Doe', 'Alice Johnson'])
     })
 
     it('should perform complex data aggregation', () => {
@@ -129,25 +126,25 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         orders: [
-          { customerId: "c1", productId: "p1", amount: 150 },
-          { customerId: "c2", productId: "p1", amount: 75 },
-          { customerId: "c1", productId: "p2", amount: 200 },
-          { customerId: "c3", productId: "p2", amount: 50 }
+          { customerId: 'c1', productId: 'p1', amount: 150 },
+          { customerId: 'c2', productId: 'p1', amount: 75 },
+          { customerId: 'c1', productId: 'p2', amount: 200 },
+          { customerId: 'c3', productId: 'p2', amount: 50 },
         ],
         products: [
-          { id: "p1", name: "Widget A" },
-          { id: "p2", name: "Widget B" },
-          { id: "p3", name: "Widget C" }
-        ]
+          { id: 'p1', name: 'Widget A' },
+          { id: 'p2', name: 'Widget B' },
+          { id: 'p3', name: 'Widget C' },
+        ],
       }
 
       const result = evaluate(simpleExpr, context)
-      
-      expect(result).toEqual({
+
+      expect(result).toStrictEqual({
         totalOrders: 4,
         highValueOrders: 2,
-        customers: ["c1", "c2", "c1", "c3"],
-        products: ["p1", "p1", "p2", "p2"]
+        customers: ['c1', 'c2', 'c1', 'c3'],
+        products: ['p1', 'p1', 'p2', 'p2'],
       })
     })
   })
@@ -179,17 +176,22 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         messages: [
-          { id: 1, author: "alice", content: "Hello world!" },
-          { id: 2, author: "bob", content: "" },
-          { id: 3, author: "charlie", content: "This is a much longer message that goes on and on and on and should be marked as long based on our criteria for what constitutes a long message in our system." }
-        ]
+          { id: 1, author: 'alice', content: 'Hello world!' },
+          { id: 2, author: 'bob', content: '' },
+          {
+            id: 3,
+            author: 'charlie',
+            content:
+              'This is a much longer message that goes on and on and on and should be marked as long based on our criteria for what constitutes a long message in our system.',
+          },
+        ],
       }
 
       const result = evaluate(simpleExpr, context)
-      
-      expect(result).toEqual([
-        { id: 1, author: "alice", length: 12, isLong: false },
-        { id: 3, author: "charlie", length: 158, isLong: true }
+
+      expect(result).toStrictEqual([
+        { id: 1, author: 'alice', length: 12, isLong: false },
+        { id: 3, author: 'charlie', length: 158, isLong: true },
       ])
     })
 
@@ -204,11 +206,13 @@ describe('CEL Integration Tests', () => {
       `
 
       const result = evaluate(expr)
-      
+
       expect(result.isValidSize).toBe(true)
       expect(result.emptyBytes).toBe(true)
       expect(result.utf8Hello).toBeInstanceOf(Uint8Array)
-      expect(Array.from(result.utf8Hello as Uint8Array)).toEqual([0x48, 0x65, 0x6c, 0x6c, 0x6f])
+      expect(Array.from(result.utf8Hello as Uint8Array)).toStrictEqual([
+        0x48, 0x65, 0x6c, 0x6c, 0x6f,
+      ])
     })
   })
 
@@ -235,33 +239,33 @@ describe('CEL Integration Tests', () => {
         {
           context: {
             request: {
-              user: { authenticated: true, id: "user1", roles: ["admin"] },
-              action: "delete",
-              resource: { sensitive: true, public: false, owner: "user2" }
-            }
+              user: { authenticated: true, id: 'user1', roles: ['admin'] },
+              action: 'delete',
+              resource: { sensitive: true, public: false, owner: 'user2' },
+            },
           },
-          expected: true
+          expected: true,
         },
         {
           context: {
             request: {
-              user: { authenticated: true, id: "user1", roles: ["moderator"] },
-              action: "delete", 
-              resource: { sensitive: true, public: false, owner: "user2" }
-            }
+              user: { authenticated: true, id: 'user1', roles: ['moderator'] },
+              action: 'delete',
+              resource: { sensitive: true, public: false, owner: 'user2' },
+            },
           },
-          expected: false
+          expected: false,
         },
         {
           context: {
             request: {
               user: { authenticated: false },
-              action: "read",
-              resource: { public: true }
-            }
+              action: 'read',
+              resource: { public: true },
+            },
           },
-          expected: true
-        }
+          expected: true,
+        },
       ]
 
       testCases.forEach((testCase, index) => {
@@ -281,43 +285,40 @@ describe('CEL Integration Tests', () => {
       const context = {
         datasets: [
           {
-            name: "Dataset A",
+            name: 'Dataset A',
             active: true,
             records: [
-              { id: "1", value: 10, category: "type1", processed: true },
-              { id: "2", value: 20, category: "type2", processed: true },
-              { value: 30, category: "type1", processed: false }
-            ]
+              { id: '1', value: 10, category: 'type1', processed: true },
+              { id: '2', value: 20, category: 'type2', processed: true },
+              { value: 30, category: 'type1', processed: false },
+            ],
           },
           {
-            name: "Dataset B", 
+            name: 'Dataset B',
             active: false,
             records: [
-              { id: "3", value: 40, category: "type3", processed: true }
-            ]
+              { id: '3', value: 40, category: 'type3', processed: true },
+            ],
           },
           {
-            name: "Dataset C",
+            name: 'Dataset C',
             active: true,
-            records: []
+            records: [],
           },
           {
-            name: "Dataset D",
+            name: 'Dataset D',
             active: true,
             records: [
-              { id: "4", value: 50, category: "type1", processed: true },
-              { id: "5", value: 60, category: "", processed: true }
-            ]
-          }
-        ]
+              { id: '4', value: 50, category: 'type1', processed: true },
+              { id: '5', value: 60, category: '', processed: true },
+            ],
+          },
+        ],
       }
 
       const result = evaluate(expr, context)
-      
-      expect(result).toEqual([
-        "Dataset A",
-        "Dataset D"
-      ])
+
+      expect(result).toStrictEqual(['Dataset A', 'Dataset D'])
     })
   })
 
@@ -336,15 +337,15 @@ describe('CEL Integration Tests', () => {
       `
 
       const result = evaluate(expr)
-      
-      expect(result).toEqual({
+
+      expect(result).toStrictEqual({
         integerMath: 43,
         floatMath: 7.78,
         mixedMath: 17,
         comparison: true,
         stringComparison: true,
         logicalOps: true,
-        precedence: true
+        precedence: true,
       })
     })
 
@@ -361,28 +362,28 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         items: [
-          { 
-            price: 10.99, 
-            category: "electronics", 
-            tags: ["new", "popular"], 
-            featured: true, 
-            inStock: true 
+          {
+            price: 10.99,
+            category: 'electronics',
+            tags: ['new', 'popular'],
+            featured: true,
+            inStock: true,
           },
-          { 
-            price: 25.50, 
-            category: "books", 
-            tags: [], 
-            featured: false, 
-            inStock: true 
+          {
+            price: 25.5,
+            category: 'books',
+            tags: [],
+            featured: false,
+            inStock: true,
           },
-          { 
-            price: 5.00, 
-            category: "accessories", 
-            tags: ["sale"], 
-            featured: false, 
-            inStock: false 
-          }
-        ]
+          {
+            price: 5.0,
+            category: 'accessories',
+            tags: ['sale'],
+            featured: false,
+            inStock: false,
+          },
+        ],
       }
 
       const result = evaluate(expr, context)
@@ -401,32 +402,32 @@ describe('CEL Integration Tests', () => {
 
       const context = {
         users: [
-          { 
-            email: "john@example.com", 
-            profile: { name: "John Doe" } 
+          {
+            email: 'john@example.com',
+            profile: { name: 'John Doe' },
           },
-          { 
-            email: "jane@example.com", 
-            phone: "555-1234",
-            profile: { name: "Jane Smith" }
+          {
+            email: 'jane@example.com',
+            phone: '555-1234',
+            profile: { name: 'Jane Smith' },
           },
-          { 
-            email: "bob@example.com", 
-            phone: "",
-            profile: { name: "Bob Wilson" }
+          {
+            email: 'bob@example.com',
+            phone: '',
+            profile: { name: 'Bob Wilson' },
           },
-          { 
-            profile: { name: "No Email" }
-          }
-        ]
+          {
+            profile: { name: 'No Email' },
+          },
+        ],
       }
 
       const result = evaluate(expr, context)
-      
-      expect(result).toEqual([
-        "john@example.com",
-        "jane@example.com",
-        "bob@example.com"
+
+      expect(result).toStrictEqual([
+        'john@example.com',
+        'jane@example.com',
+        'bob@example.com',
       ])
     })
 
@@ -446,8 +447,8 @@ describe('CEL Integration Tests', () => {
       `
 
       const result = evaluate(expr)
-      
-      expect(result).toEqual({
+
+      expect(result).toStrictEqual({
         emptyArrayAll: true,
         emptyArrayExists: false,
         emptyArrayExistsOne: false,
@@ -456,7 +457,7 @@ describe('CEL Integration Tests', () => {
         emptyMapAll: true,
         emptyMapExists: false,
         emptyMapFilter: {},
-        emptyMapMap: {}
+        emptyMapMap: {},
       })
     })
 
@@ -466,7 +467,7 @@ describe('CEL Integration Tests', () => {
       const expr3 = `{"key": "value"}.nonExistentMethod()`
 
       expect(() => evaluate(expr1)).toThrow()
-      expect(() => evaluate(expr2)).toThrow()  
+      expect(() => evaluate(expr2)).toThrow()
       expect(() => evaluate(expr3)).toThrow()
     })
   })
@@ -486,21 +487,21 @@ describe('CEL Integration Tests', () => {
 
       const validRequest = {
         request: {
-          method: "POST",
-          path: "/api/v1/users",
-          headers: { authorization: "Bearer token123" },
+          method: 'POST',
+          path: '/api/v1/users',
+          headers: { authorization: 'Bearer token123' },
           body: '{"name": "John Doe"}',
-          metadata: { rateLimitExceeded: false }
-        }
+          metadata: { rateLimitExceeded: false },
+        },
       }
 
       const invalidRequest = {
         request: {
-          method: "POST", 
-          path: "/api/v1/users",
+          method: 'POST',
+          path: '/api/v1/users',
           headers: {},
-          body: ""
-        }
+          body: '',
+        },
       }
 
       expect(evaluate(simpleExpr, validRequest)).toBe(true)
@@ -524,14 +525,14 @@ describe('CEL Integration Tests', () => {
       const context = {
         order: {
           items: [
-            { productId: "p1", quantity: 2, price: 10.00 },
-            { productId: "p2", quantity: 1, price: 25.00 }
+            { productId: 'p1', quantity: 2, price: 10.0 },
+            { productId: 'p2', quantity: 1, price: 25.0 },
           ],
-          total: 45.00,
-          shippingAddress: ["123 Main St", "Anytown", "12345"],
-          paymentMethod: "credit_card",
-          creditCard: { last4: "1234" }
-        }
+          total: 45.0,
+          shippingAddress: ['123 Main St', 'Anytown', '12345'],
+          paymentMethod: 'credit_card',
+          creditCard: { last4: '1234' },
+        },
       }
 
       const result = evaluate(simpleExpr, context)
